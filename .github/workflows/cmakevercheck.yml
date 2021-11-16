@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  example:
+  setupcmake:
     runs-on: ubuntu-latest
     steps:
     - name: Setup cmake
@@ -20,6 +20,60 @@ jobs:
         cmake-version: '3.16.x'
     - name: Use cmake
       run: cmake --version
+      
+  coverage-linux:
+    name: libSMCE (coverage) - Linux
+    runs-on: ubuntu-latest
+    container: ubuntu:hirsute
+    env:
+      DEBIAN_FRONTEND: "noninteractive"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check deps
+        run: |
+          apt-get update
+          apt-get install -y lcov curl wget git ninja-build g++ libboost-all-dev libmosquitto-dev pkg-config jq perl-base
+          ninja --version
+          cmake --version
+          wget -O Juniper.deb https://www.juniper-lang.org/installers/Juniper-3.0.0.deb
+          apt-get install ./Juniper.deb
+      - name: Setup global CMake interceptor
+        run: ci/setup-cmake-interceptor.sh
+      - name: CMake configure
+        run: |
+          cmake -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DSMCE_COVERAGE=On \
+          -DSMCE_BUILD_STATIC=Off \
+          -DSMCE_CXXRT_LINKING=SHARED \
+          -DSMCE_BOOST_LINKING=SHARED \
+          -DSMCE_MOSQUITTO_LINKING=SHARED \
+          -DSMCE_TEST_JUNIPER=On \
+          -B ./build
+      - name: CMake build
+        run: cmake --build ./build
+      - name: Build & Run tests
+        run: |
+          cmake --build ./build --target SMCE_Tests
+          (cd build/test/; ctest --output-on-failure)
+      - name: Collect C++ coverage information
+        run: |
+          lcov --directory . --capture --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' "$(pwd)/test/*" "$(pwd)/build/*" --output-file coverage.info
+          lcov --list coverage.info
+      - name: Collect CMake coverage information
+        run: |
+          ci/scan-cmake-commands.sh
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          files: ./coverage.info,./cmake-codecov-report.json
+      - name: Upload traces
+        uses: 'actions/upload-artifact@v2'
+        with:
+          name: cmcov-traces
+          path: CMakeTrace/
+          
   build-ubuntu:
     name: libSMCE - Ubuntu (${{ matrix.compiler.name }} & Boost ${{ matrix.boost.version }})
     runs-on: ubuntu-latest
