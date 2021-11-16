@@ -395,12 +395,11 @@ bool FrameBuffer::write_rgb565(std::span<const std::byte> buf) {
     auto* to = frame_buf.data.data();
 
    for (unsigned int i = 0; i < buf.size(); i++) {
-        *to++ = buf[i] & (std::byte)0b11111000; // r (rrrrr... -> rrrrr000)
+        *to++ = buf[i] & (std::byte)0b11111000;
         *to++ = ((buf[i] & (std::byte)0b00000111) << 5) |
-                ((buf[i + 1] & (std::byte)0b11100000) >> 3); // g (.....ggg ggg..... -> gggggg00)
-        // Got to do i++ after since i might be unsequencedly modified otherwise
+                ((buf[i + 1] & (std::byte)0b11100000) >> 3); 
         i++;
-        *to++ = (buf[i] & (std::byte)0b00011111) << 3; // b (...bbbbb -> bbbbb000)
+        *to++ = (buf[i] & (std::byte)0b00011111) << 3;
     }
 
     return true;
@@ -418,14 +417,13 @@ bool FrameBuffer::read_rgb565(std::span<std::byte> buf) {
     
     const auto* from = frame_buf.data.data();
     for (unsigned int i = 0; i < buf.size();) {
-        // First byte is red, second green and third blue in RGB888
         std::byte r = *from++;
         std::byte g = *from++;
         std::byte b = *from++;
 
-        buf[i++] = (r & (std::byte)0b11111000) | ((g & (std::byte)0b11100000) >> 5); // rrrrrrrr gggggggg -> rrrrrggg
+        buf[i++] = (r & (std::byte)0b11111000) | ((g & (std::byte)0b11100000) >> 5); 
         buf[i++] =
-            ((g & (std::byte)0b00000111) << 5) | ((b & (std::byte)0b11111000) >> 3); // gggggggg bbbbbbbb -> gggbbbbb
+            ((g & (std::byte)0b00000111) << 5) | ((b & (std::byte)0b11111000) >> 3);
     }
     return true;
 }
