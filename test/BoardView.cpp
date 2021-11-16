@@ -247,101 +247,93 @@ TEST_CASE("BoardView RGB444 cvt", "[BoardView]") {
 }
 
 TEST_CASE("BoardView RGB565 cvt", "[BoardView]") {
-     smce::Toolchain tc{SMCE_PATH};
-     REQUIRE(!tc.check_suitable_environment());
-     smce::Sketch sk{SKETCHES_PATH "noop", {.fqbn = "arduino:avr:nano"}};
-     const auto ec = tc.compile(sk);
-     if (ec)
-         std::cerr << tc.build_log().second;
-     REQUIRE_FALSE(ec);
-     smce::Board br{};
-     REQUIRE(br.configure({.frame_buffers = {{}}}));
-     REQUIRE(br.attach_sketch(sk));
-     REQUIRE(br.prepare());
-     auto bv = br.view();
-     REQUIRE(bv.valid());
-     REQUIRE(br.start());
-     REQUIRE(br.suspend());
-     auto fb = bv.frame_buffers[0];
-     REQUIRE(fb.exists());
+    smce::Toolchain tc{SMCE_PATH};
+    REQUIRE(!tc.check_suitable_environment());
+    smce::Sketch sk{SKETCHES_PATH "noop", {.fqbn = "arduino:avr:nano"}};
+    const auto ec = tc.compile(sk);
+    if (ec)
+        std::cerr << tc.build_log().second;
+    REQUIRE_FALSE(ec);
+    smce::Board br{};
+    REQUIRE(br.configure({.frame_buffers = {{}}}));
+    REQUIRE(br.attach_sketch(sk));
+    REQUIRE(br.start());
+    auto bv = br.view();
+    REQUIRE(bv.valid());
+    REQUIRE(br.suspend());
+    auto fb = bv.frame_buffers[0];
+    REQUIRE(fb.exists());
 
-     // Changing frequency works
-     REQUIRE_FALSE(fb.get_freq() == 10);
-     fb.set_freq(10);
-     REQUIRE(fb.get_freq() == 10);
+    {
+        constexpr std::size_t height = 1;
+        constexpr std::size_t width = 1;
 
-     {
-         constexpr std::size_t height = 1;
-         constexpr std::size_t width = 1;
+        constexpr std::array in = {'\xBC'_b, '\x0A'_b};
+        constexpr std::array expected_out = {'\xB8'_b, '\x80'_b, '\x50'_b};
+        static_assert(in.size() == expected_out.size() / 3 * 2);
 
-         constexpr std::array in = {'\x65'_b, '\x8C'_b};
-         constexpr std::array expected_out = {'\x30'_b, '\x34'_b, '\x30'_b};
-         static_assert(in.size() == expected_out.size() / 3 * 2);
+        fb.set_height(height);
+        fb.set_width(width);
+        REQUIRE(fb.write_rgb565(in));
 
-         fb.set_height(height);
-         fb.set_width(width);
-         REQUIRE(fb.write_rgb565(in));
+        std::array<std::byte, std::size(expected_out)> out;
+        REQUIRE(fb.read_rgb888(out));
+        REQUIRE(out == expected_out);
+    }
 
-         std::array<std::byte, std::size(expected_out)> out;
-         REQUIRE(fb.read_rgb888(out));
-         REQUIRE(out == expected_out);
-     }
+    {
+        constexpr std::size_t height = 2;
+        constexpr std::size_t width = 2;
 
-     {
-         constexpr std::size_t height = 2;
-         constexpr std::size_t width = 2;
+        constexpr std::array in = {'\x23'_b, '\xF1'_b, '\x56'_b, '\xF4'_b, '\x89'_b, '\xF7'_b, '\xBC'_b, '\xFA'_b};
+        constexpr std::array expected_out = {'\x20'_b, '\x7C'_b, '\x88'_b, '\x50'_b, '\xDC'_b, '\xA0'_b,
+                                             '\x88'_b, '\x3C'_b, '\xB8'_b, '\xB8'_b, '\x9C'_b, '\xD0'_b};
+        static_assert(in.size() == expected_out.size() / 3 * 2);
 
-         constexpr std::array in = {'\x65'_b, '\x8C'_b, '\x65'_b, '\x8C'_b, '\x65'_b, '\x8C'_b, '\x65'_b, '\x8C'_b};
-         constexpr std::array expected_out = {'\x30'_b, '\x34'_b, '\x30'_b, '\x30'_b, '\x34'_b, '\x30'_b,
-                                              '\x30'_b, '\x34'_b, '\x30'_b, '\x30'_b, '\x34'_b, '\x30'_b};
-         static_assert(in.size() == expected_out.size() / 3 * 2);
+        fb.set_height(height);
+        fb.set_width(width);
+        fb.write_rgb565(in);
 
-         fb.set_height(height);
-         fb.set_width(width);
-         fb.write_rgb565(in);
+        std::array<std::byte, std::size(expected_out)> out;
+        fb.read_rgb888(out);
+        REQUIRE(out == expected_out);
+    }
 
-         std::array<std::byte, std::size(expected_out)> out;
-         fb.read_rgb888(out);
-         REQUIRE(out == expected_out);
-     }
+    {
+        constexpr std::size_t height = 1;
+        constexpr std::size_t width = 1;
 
-     {
-         constexpr std::size_t height = 1;
-         constexpr std::size_t width = 1;
+        constexpr std::array in = {'\xAD'_b, '\xBE'_b, '\xCF'_b};
+        constexpr std::array expected_out = {'\xAD'_b, '\xD9'_b};
+        static_assert(expected_out.size() == in.size() / 3 * 2);
 
-         constexpr std::array in = {'\x34'_b, '\x34'_b, '\x34'_b};
-         constexpr std::array expected_out = {'\x65'_b, '\x8C'_b};
-         static_assert(expected_out.size() == in.size() / 3 * 2);
+        fb.set_height(height);
+        fb.set_width(width);
+        REQUIRE(fb.write_rgb888(in));
 
-         fb.set_height(height);
-         fb.set_width(width);
-         REQUIRE(fb.write_rgb888(in));
+        std::array<std::byte, std::size(expected_out)> out;
+        REQUIRE(fb.read_rgb565(out));
+        REQUIRE(out == expected_out);
+    }
 
-         std::array<std::byte, std::size(expected_out)> out;
-         REQUIRE(fb.read_rgb565(out));
-         REQUIRE(out == expected_out);
-     }
+    {
+        constexpr std::size_t height = 2;
+        constexpr std::size_t width = 2;
 
-     {
-         constexpr std::size_t height = 2;
-         constexpr std::size_t width = 2;
+        constexpr std::array in = {'\x1A'_b, '\x2B'_b, '\x3C'_b, '\x4D'_b, '\x5E'_b, '\x6F'_b,
+                                   '\x7A'_b, '\x8B'_b, '\x9C'_b, '\xAD'_b, '\xBE'_b, '\xCF'_b};
+        constexpr std::array expected_out = {'\x19'_b, '\x67'_b, '\x4A'_b, '\xCD'_b,
+                                             '\x7C'_b, '\x73'_b, '\xAD'_b, '\xD9'_b};
+        static_assert(expected_out.size() == in.size() / 3 * 2);
 
-         constexpr std::array in = {'\x34'_b, '\x34'_b, '\x34'_b, '\x34'_b, '\x34'_b, '\x34'_b,
-                                    '\x34'_b, '\x34'_b, '\x34'_b, '\x34'_b, '\x34'_b, '\x34'_b};
-         constexpr std::array expected_out = {'\x65'_b, '\x8C'_b, '\x65'_b, '\x8C'_b,
-                                              '\x65'_b, '\x8C'_b, '\x65'_b, '\x8C'_b};
-         static_assert(expected_out.size() == in.size() / 3 * 2);
+        fb.set_height(height);
+        fb.set_width(width);
+        fb.write_rgb888(in);
 
-         fb.set_height(height);
-         fb.set_width(width);
-         fb.write_rgb888(in);
+        std::array<std::byte, std::size(expected_out)> out;
+        fb.read_rgb565(out);
+        REQUIRE(out == expected_out);
+    }
 
-         std::array<std::byte, std::size(expected_out)> out;
-         fb.read_rgb565(out);
-         REQUIRE(out == expected_out);
-     }
-
-
-
-     REQUIRE(br.stop());
- }
+    REQUIRE(br.stop());
+}
