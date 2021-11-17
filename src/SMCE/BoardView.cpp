@@ -395,11 +395,10 @@ bool FrameBuffer::write_rgb565(std::span<const std::byte> buf) {
     auto* to = frame_buf.data.data();
 
    for (unsigned int i = 0; i < buf.size(); i++) {
-        *to++ = buf[i] & (std::byte)0xF8;
-        *to++ = ((buf[i] & (std::byte)0x7) << 5) |
-                ((buf[i + 1] & (std::byte)0xE0) >> 3); 
+        *to++ = buf[i] & (std::byte)0xF8; //Writing red pixels
+        *to++ = ((buf[i] & (std::byte)0x7) << 5) | ((buf[i + 1] & (std::byte)0xE0) >> 3); //Writing green pixels
         i++;
-        *to++ = (buf[i] & (std::byte)0x1F) << 3;
+        *to++ = (buf[i] & (std::byte)0x1F) << 3; //Writing blue pixels
     }
 
     return true;
@@ -421,9 +420,8 @@ bool FrameBuffer::read_rgb565(std::span<std::byte> buf) {
         std::byte g = *from++;
         std::byte b = *from++;
 
-        buf[i++] = (r & (std::byte)0xF8) | ((g & (std::byte)0xE0) >> 5); 
-        buf[i++] =
-            ((g & (std::byte)0x7) << 5) | ((b & (std::byte)0xF8) >> 3);
+        buf[i++] = (r & (std::byte)0xF8) | ((g & (std::byte)0xE0) >> 5); //writing start of list rrrrrggg 
+        buf[i++] = ((g & (std::byte)0x7) << 5) | ((b & (std::byte)0xF8) >> 3); //writing tail of list gggbbbbb
     }
     return true;
 }

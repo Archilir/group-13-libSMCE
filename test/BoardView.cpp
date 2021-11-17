@@ -265,6 +265,8 @@ TEST_CASE("BoardView RGB565 cvt", "[BoardView]") {
     REQUIRE(fb.exists());
 
     {
+
+        //used framework from RGB444 test, increasing the excepted output pixel accordingly
         constexpr std::size_t height = 1;
         constexpr std::size_t width = 1;
 
