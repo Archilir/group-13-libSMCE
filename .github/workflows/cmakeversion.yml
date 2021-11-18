@@ -91,21 +91,21 @@ jobs:
             slug: gcc
             c: gcc-11
             cxx: g++-11
-          - name: GCC 10
-            release: false
-            slug: gcc
-            c: gcc-10
-            cxx: g++-10
-          - name: Clang/LLVM 13
-            release: true
-            slug: clang
-            c: clang-13
-            cxx: clang++-13
-          - name: AppleClang 12
-            release: true
-            slug: appleclang
-            c: clang
-            cxx: clang++
+          #- name: GCC 10
+            #release: false
+            #slug: gcc
+            #c: gcc-10
+            #cxx: g++-10
+         # - name: Clang/LLVM 13
+            #release: true
+            #slug: clang
+           # c: clang-13
+           # cxx: clang++-13
+          #- name: AppleClang 12
+            #release: true
+            #slug: appleclang
+           # c: clang
+            #cxx: clang++
         cmake: [3.17.x, 3.18.x, 3.19.x, 3.20.x, 3.21.x, 3.22.x]
 
     env:
