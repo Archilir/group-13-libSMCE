@@ -20,3 +20,71 @@ jobs:
     - name: Use cmake
       run: cmake --version
 
+build-ubuntu:
+    name: libSMCE - Ubuntu (${{ matrix.compiler.name }} & Boost ${{ matrix.boost.version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - name: GCC 10
+            c: gcc-10
+            cxx: g++-10
+          - name: Clang/LLVM 10
+            c: clang-10
+            cxx: clang++-10
+        boost:
+          - version: 1.74.0
+            release: true
+          - version: 1.75.0
+            release: false
+          - version: 1.76.0
+            release: false
+          - version: 1.77.0
+            release: false
+    env:
+      CC: ${{ matrix.compiler.c }}
+      CXX: ${{ matrix.compiler.cxx }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache Boost
+        id: cache-boost
+        uses: actions/cache@v2
+        with:
+          path: boost_root
+          key: ${{ runner.os }}-boost-${{ matrix.boost.version }}-pic
+      - name: Install Boost
+        if: steps.cache-boost.outputs.cache-hit != 'true'
+        run: ci/build-static-boost.sh ${{ matrix.boost.version }}
+      - name: Check deps
+        run: |
+          sudo apt install ninja-build
+          ninja --version # technically not a dependency, but used to speedup builds
+          cmake --version
+      - name: CMake configure
+        run: |
+          export BOOST_ROOT="$(pwd)/boost_root"
+          mkdir build
+          cmake -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSMCE_CXXRT_LINKING=STATIC \
+            -DSMCE_BOOST_LINKING=STATIC \
+            -DSMCE_OPENSSL_LINKING=STATIC \
+            -S ./ -B ./build
+      - name: CMake build
+        run: cmake --build ./build
+      - name: Build & Run tests
+        run: |
+          cmake --build ./build --target SMCE_Tests
+          (cd build/test/; ctest --output-on-failure)
+      - name: Package
+        run: |
+          mkdir ./build/packages
+          (cd build/; cpack -B packages)
+          rm -rd build/packages/_CPack_Packages
+      - name: Upload artifacts
+        if: matrix.boost.release
+        uses: 'actions/upload-artifact@v2'
+        with:
+          name: libSMCE-ubuntu-${{ matrix.compiler.c }}
+          path: build/packages/*
