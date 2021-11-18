@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v2
       #- name: Install CMake
       - name: Get specific version CMake
-        uses: lukka/get-cmake@3.16.9
+        uses: lukka/get-cmake@v3.16.9
         #uses: jwlawson/actions-setup-cmake@v1.11
         #with: 
           #cmake-version: '${{ matrix.cmake }}'
