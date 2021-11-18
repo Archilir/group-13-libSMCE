@@ -31,7 +31,7 @@ jobs:
             #release: false
          # - version: 1.77.0
             #release: false
-        cmake: [lukka/get-cmake@v3.16.9, v3.16]
+        cmake: [3.12, v3.16]
     env:
       CC: ${{ matrix.compiler.c }}
       CXX: ${{ matrix.compiler.cxx }}
@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v2
       #- name: Install CMake
       - name: Get specific version CMake
-        uses: ${{ matrix.cmake }}
+        uses: lukka/get-cmake@v3.16.9
         #uses: jwlawson/actions-setup-cmake@v1.11
         #with: 
           #cmake-version: '${{ matrix.cmake }}'
