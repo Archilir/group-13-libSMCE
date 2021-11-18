@@ -32,11 +32,16 @@ jobs:
             release: false
           - version: 1.77.0
             release: false
+        cmake: [3.12, 3.16]
     env:
       CC: ${{ matrix.compiler.c }}
       CXX: ${{ matrix.compiler.cxx }}
     steps:
       - uses: actions/checkout@v2
+      - name: Install CMake
+        uses: jwlawson/actions-setup-cmake@v1.9
+        with: 
+          cmake-version: '${{ matrix.cmake }'
       - name: Cache Boost
         id: cache-boost
         uses: actions/cache@v2
@@ -72,9 +77,4 @@ jobs:
           mkdir ./build/packages
           (cd build/; cpack -B packages)
           rm -rd build/packages/_CPack_Packages
-      - name: Upload artifacts
-        if: matrix.boost.release
-        uses: 'actions/upload-artifact@v2'
-        with:
-          name: libSMCE-ubuntu-${{ matrix.compiler.c }}
-          path: build/packages/*
+
