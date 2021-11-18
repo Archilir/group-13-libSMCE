@@ -78,4 +78,96 @@ jobs:
           mkdir ./build/packages
           (cd build/; cpack -B packages)
           rm -rd build/packages/_CPack_Packages
+          
+  build-macos:
+    name: libSMCE - macOS (${{ matrix.compiler.name }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - name: GCC 11
+            release: true
+            slug: gcc
+            c: gcc-11
+            cxx: g++-11
+          - name: GCC 10
+            release: false
+            slug: gcc
+            c: gcc-10
+            cxx: g++-10
+          - name: Clang/LLVM 13
+            release: true
+            slug: clang
+            c: clang-13
+            cxx: clang++-13
+          - name: AppleClang 12
+            release: true
+            slug: appleclang
+            c: clang
+            cxx: clang++
+        cmake: [3.17.x, 3.18.x, 3.19.x, 3.20.x, 3.21.x, 3.22.x]
+
+    env:
+      CC: ${{ matrix.compiler.c }}
+      CXX: ${{ matrix.compiler.cxx }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check deps
+        run: |
+          brew install ninja openssl bash
+          ninja --version # technically not a dependency, but used to speedup builds
+          cmake --version
+      - name: Cache Boost with GCC
+        if: startsWith(matrix.compiler.name, 'GCC')
+        uses: actions/cache@v2
+        with:
+          path: |
+            /usr/local/lib/cmake/Boost
+            /usr/local/lib/cmake/boost_*
+            /usr/local/Cellar/boost
+          key: ${{ runner.os }}-boost176-gcc
+      - name: Install Boost with GCC
+        if: startsWith(matrix.compiler.name, 'GCC')
+        run: |
+          sed -e 's/bootstrap_args = %W\[/bootstrap_args = %W\[\
+          --with-toolset=gcc/' -i '' /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/Formula/boost.rb
+          brew install boost -s --cc=${{ matrix.compiler.c }}
+          brew link boost
+      - name: Install Boost with Clang
+        if: (!startsWith(matrix.compiler.name, 'GCC'))
+        run: brew install boost
+      - name: Install CMake
+        uses: jwlawson/actions-setup-cmake@v1.11
+        with: 
+          cmake-version: '${{ matrix.cmake }}'
+      - name: Use cmake
+        run: cmake --version
+      - name: Setup global CMake interceptor
+        run: ci/setup-cmake-interceptor.sh
+      - name: CMake configure
+        run: |
+          [ "${{ matrix.compiler.slug }}" = "clang" ] && export CC="$(brew --prefix llvm)/bin/clang -stdlib=libc++ -nostdinc++ -I/usr/local/opt/llvm/include/c++/v1 -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -Wno-unused-command-line-argument"
+          [ "${{ matrix.compiler.slug }}" = "clang" ] && export CXX="$(brew --prefix llvm)/bin/clang++ -stdlib=libc++ -nostdinc++ -I/usr/local/opt/llvm/include/c++/v1 -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -Wno-unused-command-line-argument"
+          mkdir build
+          cmake -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl \
+            -DSMCE_CXXRT_LINKING=STATIC \
+            -DSMCE_BOOST_LINKING=STATIC \
+            -DSMCE_OPENSSL_LINKING=STATIC \
+            -S ./ -B ./build
+      - name: CMake build
+        run: cmake --build ./build
+      - name: Build & Run tests
+        run: |
+          [ "${{ matrix.compiler.slug }}" = "clang" ] && export CC="$(brew --prefix llvm)/bin/clang -stdlib=libc++ -nostdinc++ -I/usr/local/opt/llvm/include/c++/v1 -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -Wno-unused-command-line-argument"
+          [ "${{ matrix.compiler.slug }}" = "clang" ] && export CXX="$(brew --prefix llvm)/bin/clang++ -stdlib=libc++ -nostdinc++ -I/usr/local/opt/llvm/include/c++/v1 -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -Wno-unused-command-line-argument"
+          cmake --build ./build --target SMCE_Tests
+          (cd build/test/; ctest --output-on-failure)
+      - name: Package
+        run: |
+          mkdir ./build/packages
+          (cd build/; cpack -B packages)
+          rm -rd build/packages/_CPack_Packages
 
