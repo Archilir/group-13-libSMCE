@@ -11,7 +11,7 @@ on:
 
 jobs:
   build-ubuntu:
-    name: libSMCE - Ubuntu (${{ matrix.compiler.name }} & Boost ${{ matrix.boost.version }})
+    name: libSMCE - Ubuntu (${{ matrix.compiler.name }} & Boost ${{ matrix.boost.version }} & CMake ${{ matrix.cmake}})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
