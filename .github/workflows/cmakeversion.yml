@@ -42,6 +42,8 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.11
         with: 
           cmake-version: '${{ matrix.cmake }}'
+      - name: Use cmake
+        run: cmake --version
       - name: Cache Boost
         id: cache-boost
         uses: actions/cache@v2
