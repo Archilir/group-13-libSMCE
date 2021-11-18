@@ -80,7 +80,7 @@ jobs:
           rm -rd build/packages/_CPack_Packages
           
   build-macos:
-    name: libSMCE - macOS (${{ matrix.compiler.name }})
+    name: libSMCE - macOS (${{ matrix.compiler.name }} & CMake ${{ matrix.cmake }})
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -170,4 +170,87 @@ jobs:
           mkdir ./build/packages
           (cd build/; cpack -B packages)
           rm -rd build/packages/_CPack_Packages
+
+  build-windows:
+    name: libSMCE - Windows ${{ matrix.build_type }} (${{ matrix.compiler.name }} & Boost ${{ matrix.boost.version }} & ${{ matrix.cmake }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Debug, Release]
+        compiler:
+          - name: MSVC
+            c: cl
+            cxx: cl
+#         - name: Clang/LLVM
+#           c: clang-cl
+#           cxx: clang++-cl
+        boost:
+          - version: 1.74.0
+            slug: 1_74_0
+            #release: false
+          #- version: 1.75.0
+            #slug: 1_75_0
+            #release: false
+          #- version: 1.76.0
+            #slug: 1_76_0
+            #release: false
+          #- version: 1.77.0
+            #slug: 1_77_0
+            #release: true
+        cmake: [3.17.x, 3.18.x, 3.19.x, 3.20.x, 3.21.x, 3.22.x]
+#   env:
+#     CC: ${{ matrix.compiler.c }}
+#     CXX: ${{ matrix.compiler.cxx }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: mkdir C:\local
+      - name: Cache Boost
+        id: cache-boost
+        uses: actions/cache@v2
+        with:
+          path: C:\local\boost_${{ matrix.boost.slug }}
+          key: ${{ runner.os }}-boost-${{ matrix.boost.version }}-64bit
+      - if: steps.cache-boost.outputs.cache-hit != 'true'
+        shell: powershell
+        run: .\ci\install-boost.ps1 '14.2' '${{ matrix.boost.version }}' '${{ matrix.boost.slug }}'
+      - name: Install CMake
+        uses: jwlawson/actions-setup-cmake@v1.11
+        with: 
+          cmake-version: '${{ matrix.cmake }}'
+      - name: Use cmake
+        run: cmake --version
+      - name: Check deps
+        shell: bash
+        run: |
+          choco install ninja openssl > silence
+          ninja --version
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: CMake configure
+        run: |
+          mkdir build
+          cmake -G Ninja `
+            -DBOOST_ROOT=C:\local\boost_${{ matrix.boost.slug }} `
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} `
+            -DSMCE_CXXRT_LINKING=SHARED `
+            -DSMCE_BOOST_LINKING=STATIC `
+            -DSMCE_OPENSSL_LINKING=STATIC `
+            -DCPACK_PACKAGE_DIRECTORY=packages `
+            -S ./ -B ./build
+      - name: CMake build
+        run: cmake --build ./build
+      - name: Build & Run tests
+        run: |
+          cmake --build ./build --target SMCE_Tests
+          cd build/test
+          ctest --output-on-failure
+      - name: Package
+        run: |
+          mkdir ./build/packages
+          cd build
+          cmake --build . --target package
+          rm -R packages/_CPack_Packages
+          cd ..
+
+
 
