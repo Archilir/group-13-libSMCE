@@ -10,17 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  setupcmake:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Setup cmake
-      uses: jwlawson/actions-setup-cmake@v1.9
-      with:
-        cmake-version: '3.16'
-    - name: Use cmake
-      run: cmake --version
-
-build-ubuntu:
+  build-ubuntu:
     name: libSMCE - Ubuntu (${{ matrix.compiler.name }} & Boost ${{ matrix.boost.version }})
     runs-on: ubuntu-latest
     strategy:
