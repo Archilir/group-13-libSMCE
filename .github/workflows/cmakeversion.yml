@@ -31,20 +31,12 @@ jobs:
             #release: false
          # - version: 1.77.0
             #release: false
-        cmake: [3.12, v3.16]
+        cmake: [3.12, 3.16]
     env:
       CC: ${{ matrix.compiler.c }}
       CXX: ${{ matrix.compiler.cxx }}
     steps:
       - uses: actions/checkout@v2
-      #- name: Install CMake
-      - name: Get specific version CMake
-        uses: lukka/get-cmake@v3.21.2
-        #uses: jwlawson/actions-setup-cmake@v1.11
-        #with: 
-          #cmake-version: '${{ matrix.cmake }}'
-      - name: Use cmake
-        run: cmake --version
       - name: Cache Boost
         id: cache-boost
         uses: actions/cache@v2
@@ -54,6 +46,12 @@ jobs:
       - name: Install Boost
         if: steps.cache-boost.outputs.cache-hit != 'true'
         run: ci/build-static-boost.sh ${{ matrix.boost.version }}
+      - name: Install CMake
+        uses: jwlawson/actions-setup-cmake@v1.11
+        with: 
+          cmake-version: '${{ matrix.cmake }}'
+      - name: Use cmake
+        run: cmake --version
       - name: Check deps
         run: |
           sudo apt install ninja-build
