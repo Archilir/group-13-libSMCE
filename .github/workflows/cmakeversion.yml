@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install CMake
-        uses: jwlawson/actions-setup-cmake@v1.9
+        uses: jwlawson/actions-setup-cmake@v1.11
         with: 
           cmake-version: '${{ matrix.cmake }}'
       - name: Cache Boost
