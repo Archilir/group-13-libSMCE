@@ -25,12 +25,12 @@ jobs:
         boost:
           - version: 1.74.0
             release: true
-          - version: 1.75.0
-            release: false
-          - version: 1.76.0
-            release: false
-          - version: 1.77.0
-            release: false
+          #- version: 1.75.0
+            #release: false
+          #- version: 1.76.0
+            #release: false
+         # - version: 1.77.0
+            #release: false
         cmake: [3.12, 3.16]
     env:
       CC: ${{ matrix.compiler.c }}
