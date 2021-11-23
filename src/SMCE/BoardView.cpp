@@ -377,6 +377,59 @@ bool FrameBuffer::read_rgb444(std::span<std::byte> buf) {
     return true;
 }
 
+
+/*
+ * MEDIA_BUS_FMT_RGB565_2X8_LE is laid as:
+ * 76543210 | 76543210
+ * GGGBBBBB   RRRRRGGG
+ */
+
+bool FrameBuffer::write_rgb565(std::span<const std::byte> buf) {
+    if (!exists())
+        return false;
+
+    auto& frame_buf = m_bdat->frame_buffers[m_idx];
+    if (buf.size() != frame_buf.data.size() / 3 * 2)
+        return false;
+
+    [[maybe_unused]] std::lock_guard lk{frame_buf.data_mut};
+
+    auto* to = frame_buf.data.data();
+
+   for (unsigned int i = 0; i < buf.size(); i++) {
+        *to++ = buf[i] & (std::byte)0xF8; //Writing red pixels
+        *to++ = ((buf[i] & (std::byte)0x7) << 5) | ((buf[i + 1] & (std::byte)0xE0) >> 3); //Writing green pixels
+        i++;
+        *to++ = (buf[i] & (std::byte)0x1F) << 3; //Writing blue pixels
+    }
+
+    return true;
+}
+
+bool FrameBuffer::read_rgb565(std::span<std::byte> buf) {
+    if (!exists())
+        return false;
+
+    auto& frame_buf = m_bdat->frame_buffers[m_idx];
+    if (buf.size() != frame_buf.data.size() / 3 * 2)
+        return false;
+    [[maybe_unused]] std::lock_guard lk{frame_buf.data_mut};
+
+    
+    const auto* from = frame_buf.data.data();
+    for (unsigned int i = 0; i < buf.size();) {
+        std::byte r = *from++;
+        std::byte g = *from++;
+        std::byte b = *from++;
+
+        buf[i++] = (r & (std::byte)0xF8) | ((g & (std::byte)0xE0) >> 5); //writing start of list rrrrrggg 
+        buf[i++] = ((g & (std::byte)0x7) << 5) | ((b & (std::byte)0xF8) >> 3); //writing tail of list gggbbbbb
+    }
+    return true;
+}
+
+
+
 FrameBuffer FrameBuffers::operator[](std::size_t key) noexcept {
     if (!m_bdat)
         return {m_bdat, 0};
