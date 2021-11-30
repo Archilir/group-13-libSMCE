@@ -175,9 +175,12 @@ TEST_CASE("BoardView RGB444 cvt", "[BoardView]") {
     {
         constexpr std::size_t height = 1;
         constexpr std::size_t width = 1;
-
+                                    GGGG BBBB 0000 RRRR
         constexpr std::array in = {'\xBC'_b, '\x0A'_b};
+                                    1011 1100 0000 1010
+                                            RRRRRRRR GGGGGGGG BBBBBBBB
         constexpr std::array expected_out = {'\xA0'_b, '\xB0'_b, '\xC0'_b};
+                                            1010 0000   1011 0000 1100 0000
         static_assert(in.size() == expected_out.size() / 3 * 2);
 
         fb.set_height(height);
@@ -192,8 +195,11 @@ TEST_CASE("BoardView RGB444 cvt", "[BoardView]") {
     {
         constexpr std::size_t height = 2;
         constexpr std::size_t width = 2;
-
+                                    GGGG BBBB 0000 RRRR
         constexpr std::array in = {'\x23'_b, '\xF1'_b, '\x56'_b, '\xF4'_b, '\x89'_b, '\xF7'_b, '\xBC'_b, '\xFA'_b};
+                                  0010 0011  1111 0001 0101 0110 1111 0100 1000 1001 1111 0111 1011 1100 1111 1010
+                                            
+                                            RRRRRRRR GGGGGGGG BBBBBBBB
         constexpr std::array expected_out = {'\x10'_b, '\x20'_b, '\x30'_b, '\x40'_b, '\x50'_b, '\x60'_b,
                                              '\x70'_b, '\x80'_b, '\x90'_b, '\xA0'_b, '\xB0'_b, '\xC0'_b};
         static_assert(in.size() == expected_out.size() / 3 * 2);
@@ -270,8 +276,16 @@ TEST_CASE("BoardView RGB565 cvt", "[BoardView]") {
         constexpr std::size_t height = 1;
         constexpr std::size_t width = 1;
 
+                                    GGGBBBBB RRRRRGGG
+                                    RRRRR GGGGGG BBBBB 
         constexpr std::array in = {'\xBC'_b, '\x0A'_b};
+                                   1011 1100 0000 1010 
+                                   1011 1000 R
+                                   1000 0000 G
+                                   0101 0000 B
+                                       RRRRRRRR GGGGGGGG BBBBBBBB
         constexpr std::array expected_out = {'\xB8'_b, '\x80'_b, '\x50'_b};
+                                            1011 1000   1000 0000   0101 0000
         static_assert(in.size() == expected_out.size() / 3 * 2);
 
         fb.set_height(height);
@@ -286,8 +300,18 @@ TEST_CASE("BoardView RGB565 cvt", "[BoardView]") {
     {
         constexpr std::size_t height = 2;
         constexpr std::size_t width = 2;
-
+                                    
+                                      RRRRR GGGGGG BBBBB
         constexpr std::array in = {'\x23'_b, '\xF1'_b, '\x56'_b, '\xF4'_b, '\x89'_b, '\xF7'_b, '\xBC'_b, '\xFA'_b};
+                                    0010 0011  1111 0001 0101 0110 1111 0100 1000 1001 1111 0111 1011 1100 1111 1010
+                                    0010 0000 R
+                                    0111 1100 G
+                                    1000 1000 B
+                                     
+                                        
+                                        
+                                        
+                                            RRRRRRRR GGGGGGGG BBBBBBBB
         constexpr std::array expected_out = {'\x20'_b, '\x7C'_b, '\x88'_b, '\x50'_b, '\xDC'_b, '\xA0'_b,
                                              '\x88'_b, '\x3C'_b, '\xB8'_b, '\xB8'_b, '\x9C'_b, '\xD0'_b};
         static_assert(in.size() == expected_out.size() / 3 * 2);
