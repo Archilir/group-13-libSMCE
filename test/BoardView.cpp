@@ -175,13 +175,38 @@ TEST_CASE("BoardView RGB444 cvt", "[BoardView]") {
     {
         constexpr std::size_t height = 1;
         constexpr std::size_t width = 1;
-                                    GGGG BBBB 0000 RRRR
+                            
+        /*
+        Converting from:
+        GGGG BBBB 0000 RRRR
+        To:
+        RRRRRRRR GGGGGGGG BBBBBBBB
+        */
         constexpr std::array in = {'\xBC'_b, '\x0A'_b};
-                                    1011 1100 0000 1010
-                                            RRRRRRRR GGGGGGGG BBBBBBBB
+                                    /*
+                                    input represented in binary is:
+                                    hexa BC = binary 1011 1100
+                                    hexa 0A = binary 0000 1010
+                                    ->
+                                    G=1011 
+                                    B=1100   
+                                    R=1010 
+                                    */
         constexpr std::array expected_out = {'\xA0'_b, '\xB0'_b, '\xC0'_b};
-                                            1010 0000   1011 0000 1100 0000
+                                    /*
+                                    expected output would therefore be same binary 
+                                    number for corresponding colour, but adding 0000
+                                    to the tail. Resulting in:
+                                    R binary 1010 0000 = R hexa A0
+                                    G binary 1011 0000 = G hexa B0
+                                    B binary 1100 0000 = B hexa C0
+                                    */
+
         static_assert(in.size() == expected_out.size() / 3 * 2);
+                                    /*
+                                    Output size becomes 3/2 larger than input size
+                                    Since conversion adds 3/2 more pixels
+                                    */
 
         fb.set_height(height);
         fb.set_width(width);
@@ -195,11 +220,17 @@ TEST_CASE("BoardView RGB444 cvt", "[BoardView]") {
     {
         constexpr std::size_t height = 2;
         constexpr std::size_t width = 2;
-                                    GGGG BBBB 0000 RRRR
+                                /*
+                                Test case follows same logic in conversion as above but with larger test size,
+                                Converting from:
+                                GGGG BBBB 0000 RRRR
+                                To:
+                                RRRRRRRR GGGGGGGG BBBBBBBB
+                                */
+                               
         constexpr std::array in = {'\x23'_b, '\xF1'_b, '\x56'_b, '\xF4'_b, '\x89'_b, '\xF7'_b, '\xBC'_b, '\xFA'_b};
-                                  0010 0011  1111 0001 0101 0110 1111 0100 1000 1001 1111 0111 1011 1100 1111 1010
+                                  //0010 0011  1111 0001 0101 0110 1111 0100 1000 1001 1111 0111 1011 1100 1111 1010
                                             
-                                            RRRRRRRR GGGGGGGG BBBBBBBB
         constexpr std::array expected_out = {'\x10'_b, '\x20'_b, '\x30'_b, '\x40'_b, '\x50'_b, '\x60'_b,
                                              '\x70'_b, '\x80'_b, '\x90'_b, '\xA0'_b, '\xB0'_b, '\xC0'_b};
         static_assert(in.size() == expected_out.size() / 3 * 2);
@@ -216,9 +247,36 @@ TEST_CASE("BoardView RGB444 cvt", "[BoardView]") {
     {
         constexpr std::size_t height = 1;
         constexpr std::size_t width = 1;
+        
+         /*
+        Converting from:
+        RRRRRRRR GGGGGGGG BBBBBBBB
+        GGGG BBBB 0000 RRRR
+        To:
+        GGGG BBBB 0000 RRRR
+        */
 
         constexpr std::array in = {'\xAD'_b, '\xBE'_b, '\xCF'_b};
+        
+                                    /*
+                                    input represented in binary is:
+                                    R hexa AD = R binary 1010 1101
+                                    G hexa BE = G binary 1011 1110
+                                    B hexa CF = B binary 1100 1111       
+                                    */
+        
         constexpr std::array expected_out = {'\xBC'_b, '\x0A'_b};
+        
+                                    /*
+                                    Expected output would therefore be: 
+                                    G binary 1011 = hexa B
+                                    B binary 1100 = hexa C
+                                    0 binary 0000 = hexa 0
+                                    R binary 1010 = hexa A
+                                    
+                                    which equals hexa BC0A
+                                    */
+        
         static_assert(expected_out.size() == in.size() / 3 * 2);
 
         fb.set_height(height);
