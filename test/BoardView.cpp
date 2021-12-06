@@ -558,6 +558,7 @@ TEST_CASE("BoardView RGB565 cvt", "[BoardView]") {
         fb.read_rgb565(out);
         REQUIRE(out == expected_out);
     }
-
+    
+    REQUIRE(br.resume());
     REQUIRE(br.stop());
 }
